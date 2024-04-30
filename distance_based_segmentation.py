@@ -1,3 +1,5 @@
+import sys
+
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,7 +37,7 @@ def distance_based_segmentation(color_space, threshold_0: float, threshold_1: fl
         mean_stds[i, 1, 1] = beans[i][:, :, 1].std()
         mean_stds[i, 2, 0] = beans[i][:, :, 2].mean()
         mean_stds[i, 2, 1] = beans[i][:, :, 2].std()
-    print(mean_stds)
+    # print(mean_stds)
 
     img_bgr = cv.imread("./jbeans.png")
     img = cv.cvtColor(img_bgr, color_space).astype(dtype=np.float32) / 255
@@ -69,39 +71,47 @@ def distance_based_segmentation(color_space, threshold_0: float, threshold_1: fl
     axes[0].set_title("origin img")
     axes[0].imshow(cv.cvtColor(img_bgr, cv.COLOR_BGR2RGB))
     if color_space == cv.COLOR_BGR2RGB:
-        axes[1].set_title("segmented in RGB color space")
+        axes[1].set_title("distance-based segmented in RGB")
     elif color_space == cv.COLOR_BGR2HSV:
-        axes[1].set_title("segmented in HSV color space")
+        axes[1].set_title("distance-based segmented in HSV")
     else:
-        axes[1].set_title("segmented in Lab color space")
+        axes[1].set_title("distance-based segmented in Lab")
     axes[1].imshow(img)
     plt.show()
 
 
-def KMeans_based_segmentation():
+def KMeans_based_segmentation(color_space):
     img_bgr = cv.imread("./jbeans.png")
-    img_rgb = cv.cvtColor(img_bgr, cv.COLOR_BGR2RGB).astype(np.float32) / 255
+    img_target_color_space = cv.cvtColor(img_bgr, color_space).astype(np.float32) / 255
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     axes[0].set_title("origin img")
-    axes[0].imshow(img_rgb)
+    axes[0].imshow(cv.cvtColor(img_bgr, cv.COLOR_BGR2RGB))
     kmeans = KMeans(n_clusters=8, n_init=10)
-    kmeans.fit(img_rgb.reshape(-1, 3))
+    kmeans.fit(img_target_color_space.reshape(-1, 3))
 
     labels = kmeans.labels_
     centers = kmeans.cluster_centers_
     seg_rgb_vals = centers[labels]
 
-    seg_img_rgb = seg_rgb_vals.reshape(img_rgb.shape)
-    axes[1].set_title("segmented RGB img")
-    axes[1].imshow(seg_img_rgb)
+    seg_img_target_color_space = seg_rgb_vals.reshape(img_target_color_space.shape)
+    if color_space == cv.COLOR_BGR2RGB:
+        axes[1].set_title("kmeans-based segmented in RGB")
+    elif color_space == cv.COLOR_BGR2HSV:
+        axes[1].set_title("kmeans-based segmented in HSV")
+    else:
+        axes[1].set_title("kmeans-based segmented in Lab")
+    axes[1].imshow(seg_img_target_color_space)
     plt.show()
 
 
 if __name__ == "__main__":
     threshold_0 = threshold_1 = threshold_2 = 2.5 # for RGB_segmentation
     distance_based_segmentation(cv.COLOR_BGR2RGB, threshold_0, threshold_1, threshold_2)
-    threshold_0, threshold_1, threshold_2 = 8, 3, 3  # rfor HSV_segmentation
+    threshold_0, threshold_1, threshold_2 = 8, 3, 3  # for HSV_segmentation
     distance_based_segmentation(cv.COLOR_BGR2HSV, threshold_0, threshold_1, threshold_2)
-    threshold_0, threshold_1, threshold_2 = 1, 5, 3  # for HSV_segmentation
+    threshold_0, threshold_1, threshold_2 = 3, 2, 3  # for HSV_segmentation
     distance_based_segmentation(cv.COLOR_BGR2Lab, threshold_0, threshold_1, threshold_2)
-    KMeans_based_segmentation()
+    KMeans_based_segmentation(cv.COLOR_BGR2RGB)
+    KMeans_based_segmentation(cv.COLOR_BGR2HSV)
+    KMeans_based_segmentation(cv.COLOR_BGR2LAB)
+
